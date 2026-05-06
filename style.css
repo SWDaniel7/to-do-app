@@ -1,0 +1,193 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.app {
+  width: min(92%, 520px);
+  margin: 48px auto;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+h1 {
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.today-date {
+  margin: -8px 0 16px;
+  text-align: center;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.todo-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+#todo-input {
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+button {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.todo-count {
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.secondary-btn {
+  background: #4b5563;
+}
+
+.secondary-btn:hover {
+  background: #374151;
+}
+
+.danger-btn {
+  background: #b91c1c;
+}
+
+.danger-btn:hover {
+  background: #991b1b;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.filter-btn {
+  padding: 8px 12px;
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.filter-btn:hover {
+  background: #d1d5db;
+}
+
+.filter-btn.active {
+  background: #2563eb;
+  color: #fff;
+}
+
+.todo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.status-message {
+  min-height: 20px;
+  margin: 4px 0 12px;
+  font-size: 14px;
+  color: #dc2626;
+}
+
+.status-message.info {
+  color: #2563eb;
+}
+
+.todo-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.todo-item.completed .todo-text {
+  text-decoration: line-through;
+  color: #6b7280;
+}
+
+.todo-text {
+  word-break: break-word;
+}
+
+.todo-content {
+  display: grid;
+  gap: 4px;
+}
+
+.todo-date {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.edit-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.edit-btn {
+  background: #059669;
+}
+
+.edit-btn:hover {
+  background: #047857;
+}
+
+.save-btn {
+  background: #2563eb;
+}
+
+.save-btn:hover {
+  background: #1d4ed8;
+}
+
+.delete-btn {
+  background: #dc2626;
+}
+
+.delete-btn:hover {
+  background: #b91c1c;
+}
