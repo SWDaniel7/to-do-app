@@ -18,6 +18,10 @@
 
 브라우저에서 열려면 Express에 `cors` 미들웨어가 필요할 수 있습니다.
 
+### macOS에서 `localhost:5000` 이 안 될 때
+
+포트 **5000**은 AirPlay 수신(AirTunes) 등 시스템 서비스가 쓰는 경우가 많습니다. Network 탭에서 응답 `Server: AirTunes/...` 이면 Express가 아니라 그 서비스에 요청이 간 것입니다. 백엔드를 **5001** 등 다른 포트로 두고, 프론트의 `API_BASE`도 같은 포트로 맞추세요.
+
 ## 로컬에서 프론트 실행
 
 ```bash
