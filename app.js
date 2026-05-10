@@ -1,5 +1,5 @@
-// Express와 같은 출처(예: http://localhost:5001)에서 열릴 때 /todos 로 API를 호출하는 클라이언트
-const API_BASE = new URL("/todos", window.location.origin).href;
+// Express 백엔드(localhost:5001) REST API로 할일 CRUD를 수행하는 클라이언트
+const API_BASE = "http://localhost:5001/todos";
 
 const todoForm = document.getElementById("todo-form");
 const todoInput = document.getElementById("todo-input");
