@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Firebase 할일 앱</title>
+    <title>할일 앱</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
@@ -22,29 +22,7 @@
         <button type="submit">추가</button>
       </form>
 
-      <section class="toolbar">
-        <div id="todo-count" class="todo-count">남은 할일 0개</div>
-        <div class="toolbar-actions">
-          <button id="toggle-all-btn" type="button" class="secondary-btn">
-            전체 완료/해제
-          </button>
-          <button id="clear-completed-btn" type="button" class="danger-btn">
-            완료 항목 삭제
-          </button>
-        </div>
-      </section>
-
-      <section class="filters">
-        <button type="button" class="filter-btn active" data-filter="all">
-          전체
-        </button>
-        <button type="button" class="filter-btn" data-filter="active">
-          진행중
-        </button>
-        <button type="button" class="filter-btn" data-filter="completed">
-          완료
-        </button>
-      </section>
+      <div id="todo-count" class="todo-count">할일 0개</div>
 
       <p id="status-message" class="status-message" aria-live="polite"></p>
       <ul id="todo-list" class="todo-list"></ul>

@@ -1,23 +1,5 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import {
-  getDatabase,
-  push,
-  ref,
-  remove,
-  set,
-  onValue,
-  update,
-} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDnVsdTFlCxLqJt7kxPzId185LwskYHtL4",
-  authDomain: "to-do-test-7779e.firebaseapp.com",
-  databaseURL: "https://to-do-test-7779e-default-rtdb.firebaseio.com",
-  projectId: "to-do-test-7779e",
-  storageBucket: "to-do-test-7779e.firebasestorage.app",
-  messagingSenderId: "87819161699",
-  appId: "1:87819161699:web:49df66e84bca28a183a856",
-};
+// Express REST API(로컬 백엔드)로 할일 CRUD를 호출하는 클라이언트 스크립트
+const API_BASE = "http://localhost:5000/todos";
 
 const todoForm = document.getElementById("todo-form");
 const todoInput = document.getElementById("todo-input");
@@ -25,10 +7,7 @@ const todoList = document.getElementById("todo-list");
 const statusMessage = document.getElementById("status-message");
 const todayDate = document.getElementById("today-date");
 const todoCount = document.getElementById("todo-count");
-const toggleAllBtn = document.getElementById("toggle-all-btn");
-const clearCompletedBtn = document.getElementById("clear-completed-btn");
-const filterButtons = document.querySelectorAll(".filter-btn");
-let currentFilter = "all";
+
 let currentTodos = [];
 let editingTodoId = null;
 
@@ -37,33 +16,17 @@ function setStatus(message, type = "error") {
   statusMessage.className = `status-message ${type === "info" ? "info" : ""}`;
 }
 
-function hasPlaceholderConfig() {
-  return Object.values(firebaseConfig).some(
-    (value) => typeof value === "string" && value.includes("YOUR_")
-  );
-}
-
-if (hasPlaceholderConfig()) {
-  setStatus(
-    "Firebase 설정값이 비어 있습니다. app.js의 firebaseConfig를 실제 값으로 바꿔주세요."
-  );
-  todoForm.addEventListener("submit", (event) => event.preventDefault());
-  throw new Error("Firebase config is not set.");
-}
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const todosRef = ref(db, "todos");
-
 function escapeHtml(text) {
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
 }
 
-function formatDateTime(timestamp) {
-  if (!timestamp) return "";
-  return new Date(timestamp).toLocaleString("ko-KR", {
+function formatDateTime(value) {
+  if (value == null || value === "") return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("ko-KR", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -73,111 +36,113 @@ function formatDateTime(timestamp) {
 }
 
 function setTodayDate() {
-  const text = new Date().toLocaleDateString("ko-KR", {
+  todayDate.textContent = new Date().toLocaleDateString("ko-KR", {
     year: "numeric",
     month: "long",
     day: "numeric",
     weekday: "long",
   });
-  todayDate.textContent = text;
 }
 
-function filteredTodos(todos) {
-  if (currentFilter === "active") {
-    return todos.filter(([, todo]) => !todo.completed);
+async function parseErrorMessage(response) {
+  try {
+    const data = await response.json();
+    if (data && typeof data.message === "string") return data.message;
+  } catch {
+    /* ignore */
   }
-  if (currentFilter === "completed") {
-    return todos.filter(([, todo]) => todo.completed);
-  }
-  return todos;
+  return response.statusText || "요청에 실패했습니다.";
+}
+
+async function apiGetTodos() {
+  const res = await fetch(API_BASE, { headers: { Accept: "application/json" } });
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
+  return res.json();
+}
+
+async function apiCreateTodo(title) {
+  const res = await fetch(API_BASE, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ title }),
+  });
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
+  return res.json();
+}
+
+async function apiUpdateTodo(id, title) {
+  const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ title }),
+  });
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
+  return res.json();
+}
+
+async function apiDeleteTodo(id) {
+  const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
+  return res.json();
 }
 
 function updateCount(todos) {
-  const activeCount = todos.filter(([, todo]) => !todo.completed).length;
-  todoCount.textContent = `남은 할일 ${activeCount}개`;
+  todoCount.textContent = `할일 ${todos.length}개`;
 }
 
-async function toggleAllTodos() {
-  if (!currentTodos.length) return;
-  const shouldCompleteAll = currentTodos.some(([, todo]) => !todo.completed);
+async function loadTodos() {
   try {
-    await Promise.all(
-      currentTodos.map(([id]) =>
-        update(ref(db, `todos/${id}`), { completed: shouldCompleteAll })
-      )
-    );
+    const list = await apiGetTodos();
+    currentTodos = Array.isArray(list) ? list : [];
     setStatus("", "info");
+    updateCount(currentTodos);
+    renderTodoList();
   } catch (error) {
-    setStatus(`전체 상태 변경 실패: ${error.message}`);
+    setStatus(error.message);
   }
 }
 
-async function clearCompletedTodos() {
-  const completed = currentTodos.filter(([, todo]) => todo.completed);
-  if (!completed.length) return;
-  try {
-    await Promise.all(completed.map(([id]) => remove(ref(db, `todos/${id}`))));
-    setStatus("", "info");
-  } catch (error) {
-    setStatus(`완료 항목 삭제 실패: ${error.message}`);
-  }
-}
-
-async function saveTodoEdit(id, text) {
-  if (!text) {
+async function saveTodoEdit(id, title) {
+  if (!title) {
     setStatus("수정할 내용은 비워둘 수 없습니다.");
     return;
   }
   try {
-    await update(ref(db, `todos/${id}`), { text });
-    currentTodos = currentTodos.map(([todoId, todo]) =>
-      todoId === id ? [todoId, { ...todo, text }] : [todoId, todo]
+    const updated = await apiUpdateTodo(id, title);
+    currentTodos = currentTodos.map((t) =>
+      String(t._id) === String(id) ? { ...t, ...updated } : t
     );
     editingTodoId = null;
     renderTodoList();
+    updateCount(currentTodos);
     setStatus("", "info");
   } catch (error) {
     setStatus(`수정 실패: ${error.message}`);
   }
 }
 
-function setFilter(filter) {
-  currentFilter = filter;
-  filterButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.filter === filter);
-  });
-  renderTodoList();
-}
-
 function renderTodoList() {
-  const visibleTodos = filteredTodos(currentTodos);
   todoList.innerHTML = "";
 
-  if (!visibleTodos.length) {
+  if (!currentTodos.length) {
     const emptyItem = document.createElement("li");
     emptyItem.className = "todo-item";
-    emptyItem.innerHTML = `<span class="todo-text">${escapeHtml(
-      "표시할 할일이 없습니다."
-    )}</span>`;
+    emptyItem.innerHTML = `<div class="todo-content"><span class="todo-text">${escapeHtml(
+      "할일이 없습니다."
+    )}</span></div>`;
     todoList.appendChild(emptyItem);
     return;
   }
 
-  for (const [id, todo] of visibleTodos) {
-    const li = document.createElement("li");
-    li.className = `todo-item ${todo.completed ? "completed" : ""}`;
+  for (const todo of currentTodos) {
+    const id = todo._id != null ? String(todo._id) : "";
+    if (!id) continue;
 
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.checked = !!todo.completed;
-    checkbox.addEventListener("change", async () => {
-      try {
-        await update(ref(db, `todos/${id}`), { completed: checkbox.checked });
-      } catch (error) {
-        setStatus(`상태 변경 실패: ${error.message}`);
-        checkbox.checked = !checkbox.checked;
-      }
-    });
+    const li = document.createElement("li");
+    li.className = "todo-item";
 
     const content = document.createElement("div");
     content.className = "todo-content";
@@ -193,11 +158,11 @@ function renderTodoList() {
       const editInput = document.createElement("input");
       editInput.type = "text";
       editInput.className = "edit-input";
-      editInput.value = todo.text || "";
+      editInput.value = todo.title || "";
 
       const saveEdit = async () => {
-        const nextText = editInput.value.trim();
-        await saveTodoEdit(id, nextText);
+        const nextTitle = editInput.value.trim();
+        await saveTodoEdit(id, nextTitle);
       };
 
       editInput.addEventListener("keydown", async (event) => {
@@ -223,7 +188,7 @@ function renderTodoList() {
     } else {
       const textSpan = document.createElement("span");
       textSpan.className = "todo-text";
-      textSpan.textContent = todo.text || "";
+      textSpan.textContent = todo.title || "";
       content.appendChild(textSpan);
       content.appendChild(dateSpan);
 
@@ -238,14 +203,18 @@ function renderTodoList() {
       secondaryButton.textContent = "삭제";
       secondaryButton.addEventListener("click", async () => {
         try {
-          await remove(ref(db, `todos/${id}`));
+          await apiDeleteTodo(id);
+          currentTodos = currentTodos.filter((t) => String(t._id) !== id);
+          if (editingTodoId === id) editingTodoId = null;
+          updateCount(currentTodos);
+          renderTodoList();
+          setStatus("", "info");
         } catch (error) {
           setStatus(`삭제 실패: ${error.message}`);
         }
       });
     }
 
-    li.appendChild(checkbox);
     li.appendChild(content);
     li.appendChild(primaryButton);
     li.appendChild(secondaryButton);
@@ -254,47 +223,23 @@ function renderTodoList() {
 }
 
 setTodayDate();
-toggleAllBtn.addEventListener("click", toggleAllTodos);
-clearCompletedBtn.addEventListener("click", clearCompletedTodos);
-filterButtons.forEach((button) => {
-  button.addEventListener("click", () => setFilter(button.dataset.filter));
-});
 
 todoForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-
-  const text = todoInput.value.trim();
-  if (!text) return;
+  const title = todoInput.value.trim();
+  if (!title) return;
 
   try {
-    const newTodoRef = push(todosRef);
-    await set(newTodoRef, {
-      text,
-      completed: false,
-      createdAt: Date.now(),
-    });
-
-    setStatus("", "info");
+    const created = await apiCreateTodo(title);
+    currentTodos = [created, ...currentTodos.filter((t) => String(t._id) !== String(created._id))];
     todoInput.value = "";
     todoInput.focus();
+    updateCount(currentTodos);
+    renderTodoList();
+    setStatus("", "info");
   } catch (error) {
     setStatus(`추가 실패: ${error.message}`);
   }
 });
 
-onValue(
-  todosRef,
-  (snapshot) => {
-    const todos = snapshot.val() || {};
-    currentTodos = Object.entries(todos).sort(
-      (a, b) => (b[1]?.createdAt || 0) - (a[1]?.createdAt || 0)
-    );
-
-    setStatus("", "info");
-    updateCount(currentTodos);
-    renderTodoList();
-  },
-  (error) => {
-    setStatus(`데이터 불러오기 실패: ${error.message}`);
-  }
-);
+loadTodos();

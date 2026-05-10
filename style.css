@@ -57,22 +57,10 @@ button:hover {
   background: #1d4ed8;
 }
 
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
 .todo-count {
   font-size: 14px;
   color: #4b5563;
-}
-
-.toolbar-actions {
-  display: flex;
-  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .secondary-btn {
@@ -81,35 +69,6 @@ button:hover {
 
 .secondary-btn:hover {
   background: #374151;
-}
-
-.danger-btn {
-  background: #b91c1c;
-}
-
-.danger-btn:hover {
-  background: #991b1b;
-}
-
-.filters {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.filter-btn {
-  padding: 8px 12px;
-  background: #e5e7eb;
-  color: #111827;
-}
-
-.filter-btn:hover {
-  background: #d1d5db;
-}
-
-.filter-btn.active {
-  background: #2563eb;
-  color: #fff;
 }
 
 .todo-list {
@@ -133,17 +92,12 @@ button:hover {
 
 .todo-item {
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: 1fr auto auto;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-}
-
-.todo-item.completed .todo-text {
-  text-decoration: line-through;
-  color: #6b7280;
 }
 
 .todo-text {
