@@ -21,7 +21,7 @@
 ## 로컬에서 프론트 실행
 
 ```bash
-python3 -m http.server 5500
+python3 -m http.server 3000
 ```
 
-브라우저에서 `http://localhost:5500` 을 열고, 백엔드는 `5000` 포트에서 실행하세요.
+브라우저에서 `http://localhost:3000` 을 열고, 백엔드는 `5000` 포트에서 실행하세요.
