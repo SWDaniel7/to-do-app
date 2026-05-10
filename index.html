@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>할일 앱</title>
+    <title>할일 앱 (REST API)</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
@@ -22,7 +22,12 @@
         <button type="submit">추가</button>
       </form>
 
-      <div id="todo-count" class="todo-count">할일 0개</div>
+      <section class="toolbar">
+        <div id="todo-count" class="todo-count">할일 0개</div>
+        <button id="refresh-btn" type="button" class="secondary-btn">
+          새로고침
+        </button>
+      </section>
 
       <p id="status-message" class="status-message" aria-live="polite"></p>
       <ul id="todo-list" class="todo-list"></ul>

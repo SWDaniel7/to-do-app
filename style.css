@@ -57,10 +57,17 @@ button:hover {
   background: #1d4ed8;
 }
 
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
 .todo-count {
   font-size: 14px;
   color: #4b5563;
-  margin-bottom: 8px;
 }
 
 .secondary-btn {

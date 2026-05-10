@@ -1,4 +1,4 @@
-// Express REST API(로컬 백엔드)로 할일 CRUD를 호출하는 클라이언트 스크립트
+// Express 백엔드(localhost:5000) REST API로 할일 CRUD를 수행하는 클라이언트
 const API_BASE = "http://localhost:5000/todos";
 
 const todoForm = document.getElementById("todo-form");
@@ -7,6 +7,7 @@ const todoList = document.getElementById("todo-list");
 const statusMessage = document.getElementById("status-message");
 const todayDate = document.getElementById("today-date");
 const todoCount = document.getElementById("todo-count");
+const refreshBtn = document.getElementById("refresh-btn");
 
 let currentTodos = [];
 let editingTodoId = null;
@@ -24,7 +25,7 @@ function escapeHtml(text) {
 
 function formatDateTime(value) {
   if (value == null || value === "") return "";
-  const d = new Date(value);
+  const d = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleString("ko-KR", {
     year: "numeric",
@@ -44,59 +45,38 @@ function setTodayDate() {
   });
 }
 
-async function parseErrorMessage(response) {
-  try {
-    const data = await response.json();
-    if (data && typeof data.message === "string") return data.message;
-  } catch {
-    /* ignore */
-  }
-  return response.statusText || "요청에 실패했습니다.";
-}
-
-async function apiGetTodos() {
-  const res = await fetch(API_BASE, { headers: { Accept: "application/json" } });
-  if (!res.ok) throw new Error(await parseErrorMessage(res));
-  return res.json();
-}
-
-async function apiCreateTodo(title) {
-  const res = await fetch(API_BASE, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ title }),
-  });
-  if (!res.ok) throw new Error(await parseErrorMessage(res));
-  return res.json();
-}
-
-async function apiUpdateTodo(id, title) {
-  const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ title }),
-  });
-  if (!res.ok) throw new Error(await parseErrorMessage(res));
-  return res.json();
-}
-
-async function apiDeleteTodo(id) {
-  const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}`, {
-    method: "DELETE",
-    headers: { Accept: "application/json" },
-  });
-  if (!res.ok) throw new Error(await parseErrorMessage(res));
-  return res.json();
-}
-
 function updateCount(todos) {
   todoCount.textContent = `할일 ${todos.length}개`;
 }
 
+async function apiRequest(path, options = {}) {
+  const url = path ? `${API_BASE}/${path}` : API_BASE;
+  const headers = {
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+  const res = await fetch(url, { ...options, headers });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg =
+      typeof data.message === "string"
+        ? data.message
+        : `요청 실패 (${res.status})`;
+    throw new Error(msg);
+  }
+  return data;
+}
+
 async function loadTodos() {
   try {
-    const list = await apiGetTodos();
-    currentTodos = Array.isArray(list) ? list : [];
+    const todos = await apiRequest("", { method: "GET" });
+    if (!Array.isArray(todos)) {
+      throw new Error("목록 형식이 올바르지 않습니다.");
+    }
+    currentTodos = todos;
+    if (editingTodoId && !currentTodos.some((t) => String(t._id) === editingTodoId)) {
+      editingTodoId = null;
+    }
     setStatus("", "info");
     updateCount(currentTodos);
     renderTodoList();
@@ -107,20 +87,22 @@ async function loadTodos() {
 
 async function saveTodoEdit(id, title) {
   if (!title) {
-    setStatus("수정할 내용은 비워둘 수 없습니다.");
+    setStatus("제목은 비워둘 수 없습니다.");
     return;
   }
   try {
-    const updated = await apiUpdateTodo(id, title);
+    const updated = await apiRequest(id, {
+      method: "PATCH",
+      body: JSON.stringify({ title }),
+    });
     currentTodos = currentTodos.map((t) =>
-      String(t._id) === String(id) ? { ...t, ...updated } : t
+      String(t._id) === id ? { ...t, ...updated } : t
     );
     editingTodoId = null;
     renderTodoList();
-    updateCount(currentTodos);
     setStatus("", "info");
   } catch (error) {
-    setStatus(`수정 실패: ${error.message}`);
+    setStatus(error.message);
   }
 }
 
@@ -130,17 +112,15 @@ function renderTodoList() {
   if (!currentTodos.length) {
     const emptyItem = document.createElement("li");
     emptyItem.className = "todo-item";
-    emptyItem.innerHTML = `<div class="todo-content"><span class="todo-text">${escapeHtml(
-      "할일이 없습니다."
-    )}</span></div>`;
+    emptyItem.innerHTML = `<span class="todo-text">${escapeHtml(
+      "할일이 없습니다. 위에서 추가해 보세요."
+    )}</span>`;
     todoList.appendChild(emptyItem);
     return;
   }
 
   for (const todo of currentTodos) {
-    const id = todo._id != null ? String(todo._id) : "";
-    if (!id) continue;
-
+    const id = String(todo._id);
     const li = document.createElement("li");
     li.className = "todo-item";
 
@@ -203,14 +183,11 @@ function renderTodoList() {
       secondaryButton.textContent = "삭제";
       secondaryButton.addEventListener("click", async () => {
         try {
-          await apiDeleteTodo(id);
-          currentTodos = currentTodos.filter((t) => String(t._id) !== id);
+          await apiRequest(id, { method: "DELETE" });
           if (editingTodoId === id) editingTodoId = null;
-          updateCount(currentTodos);
-          renderTodoList();
-          setStatus("", "info");
+          await loadTodos();
         } catch (error) {
-          setStatus(`삭제 실패: ${error.message}`);
+          setStatus(error.message);
         }
       });
     }
@@ -223,6 +200,7 @@ function renderTodoList() {
 }
 
 setTodayDate();
+refreshBtn.addEventListener("click", () => loadTodos());
 
 todoForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -230,15 +208,16 @@ todoForm.addEventListener("submit", async (event) => {
   if (!title) return;
 
   try {
-    const created = await apiCreateTodo(title);
-    currentTodos = [created, ...currentTodos.filter((t) => String(t._id) !== String(created._id))];
+    await apiRequest("", {
+      method: "POST",
+      body: JSON.stringify({ title }),
+    });
+    setStatus("", "info");
     todoInput.value = "";
     todoInput.focus();
-    updateCount(currentTodos);
-    renderTodoList();
-    setStatus("", "info");
+    await loadTodos();
   } catch (error) {
-    setStatus(`추가 실패: ${error.message}`);
+    setStatus(error.message);
   }
 });
 

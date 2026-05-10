@@ -1,29 +1,27 @@
-# 할일 앱 (프론트 + Express REST)
+# 할일 앱 (Express REST + 정적 HTML)
 
-`HTML + CSS + JavaScript` 프론트엔드가 **로컬 Express API**(`localhost:5000`)와 통신해 할일을 추가·조회·수정·삭제합니다.
+프론트는 `fetch`로 백엔드 `http://localhost:5000`의 할일 API를 호출합니다.
 
-## API 전제
+## API 경로
 
-백엔드에서 라우터가 아래와 같이 붙어 있다고 가정합니다.
+`app.js` 맨 위 `API_BASE`를 서버에서 라우터를 붙인 경로에 맞게 수정하세요.
 
-- `GET /todos` — 목록
-- `POST /todos` — 본문 `{ "title": "..." }`
-- `PATCH /todos/:id` — 본문 `{ "title": "..." }`
-- `DELETE /todos/:id`
+- 예: `app.use("/todos", todoRouter)` → `http://localhost:5000/todos`
+- 예: `app.use("/api/todos", todoRouter)` → `http://localhost:5000/api/todos`
 
-마운트 경로가 다르면 `app.js` 상단의 `API_BASE`를 수정하세요.
+## 백엔드와 맞추기
 
-```js
-const API_BASE = "http://localhost:5000/todos";
+- 목록: `GET` → JSON 배열 (`_id`, `title`, `createdAt` 등)
+- 추가: `POST` + `{ "title": "..." }`
+- 수정: `PATCH /:id` + `{ "title": "..." }`
+- 삭제: `DELETE /:id`
+
+브라우저에서 열려면 Express에 `cors` 미들웨어가 필요할 수 있습니다.
+
+## 로컬에서 프론트 실행
+
+```bash
+python3 -m http.server 5500
 ```
 
-## CORS
-
-브라우저에서 프론트를 다른 포트(또는 `file://`)로 열면 백엔드에 **CORS 허용**이 필요합니다. 예: `cors` 패키지로 `http://localhost:5500` 등 프론트 출처를 허용.
-
-## 프론트 실행
-
-1. 백엔드를 `5000` 포트에서 실행
-2. 이 폴더에서 정적 서버 실행  
-   예: `python3 -m http.server 5500`
-3. 브라우저에서 `http://localhost:5500` 열기
+브라우저에서 `http://localhost:5500` 을 열고, 백엔드는 `5000` 포트에서 실행하세요.
