@@ -1,5 +1,5 @@
-// Express 백엔드(localhost:5000) REST API로 할일 CRUD를 수행하는 클라이언트
-const API_BASE = "http://localhost:5000/todos";
+// Express 백엔드(localhost:5001) REST API로 할일 CRUD를 수행하는 클라이언트
+const API_BASE = "http://localhost:5001/todos";
 
 const todoForm = document.getElementById("todo-form");
 const todoInput = document.getElementById("todo-input");
